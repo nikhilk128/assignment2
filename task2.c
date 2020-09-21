@@ -12,6 +12,11 @@ struct result
 	int content;
 	int distance;
 };
+struct contentus
+{
+	int content;
+	int user;
+};
 void enqueue(int item)
 {
 	struct graph *temp;
@@ -117,39 +122,93 @@ int create_content_user(struct graph **content_user,struct graph **content,int l
 		}
 	}
 }
-int connectedUserNodes(struct graph **content,struct graph **content_user,int nocontent,struct result *final,int knn,int kdistcontent,int *knu, int *knud,int main_user)
+int connectedUserNodes(struct graph **graph1,struct graph **content,struct graph **content_user,int nocontent,struct result *final,int knn,int kdistcontent,int *knu, int *knud,int main_user)
 {
-	int i,j=0,k,flag=0;
+	int i,j=0,k,flag=0,start,parent,distance;
 	front=NULL,rear=NULL;
 	struct graph *temp;
-	int onedistnodes[1000];
-	onedistnodes[0]=-1;
-	//printf("%d",main_user);
+	struct contentus onedistnodes[100];
+	struct result nearest[100][100];
+	int visited[100],score[100];
 	for(i=0;i<kdistcontent;i++)
 	{
 		temp=content_user[final[i].content];
 		while(temp!=NULL)
-		{	for(k=0;k<j;k++)
-			{
-				if(temp->vertex==onedistnodes[k])// || temp->vertex==main_user)
-				{
-					//printf("%d /**/*\n",temp->vertex);
-					flag=1;
-					break;
-				}
-			}
-			if(flag==1)
-			{
-				flag=0;
-				temp=temp->next;
-				continue;
-			}	
-			onedistnodes[j++]=temp->vertex;
+		{	
+			onedistnodes[j].user=temp->vertex;
+			onedistnodes[j++].content=final[i].content;
 			temp=temp->next;
 		}
 	}
+	for(i=0;i<100;i++)
+	{	for(k=0;k<100;k++)
+		{
+			nearest[i][k].content=-1;
+			nearest[i][k].distance=-1;
+		}
+	}
+	//print(graph1,5);
+	//print(content,7);
 	for(i=0;i<j;i++)
-		printf("%d ",onedistnodes[i]);
+	{
+		for(k=0;k<j;k++)
+		visited[k]=-1;
+		start=onedistnodes[i].user;
+		visited[start]=-2;
+		nearest[i][0].content=start;
+		nearest[i][0].distance=0;
+		k=1;
+		parent=start;
+		distance=1;
+		front=NULL,rear=NULL;
+		while(start!=-1 && distance!=knn)
+		{
+		temp=graph1[start];
+		while(temp!=NULL)
+		{
+			if(visited[temp->vertex]==-1)
+			{
+				(nearest[i][k]).distance=distance;
+				(nearest[i][k++]).content=temp->vertex;
+				enqueue(temp->vertex);
+				visited[temp->vertex]=parent;
+			}
+			temp=temp->next;
+		}
+		start=dequeue();
+		if(visited[start]==parent)
+		{
+			distance++;
+			parent=start;
+		}
+		}
+	}
+	for(i=0;i<j;i++)
+	{
+		k=0;
+		while(nearest[i][k].content!=-1)
+			printf("%d ",nearest[i][k++].content);
+		printf("\n");
+	}
+	for(k=0;k<100;k++)
+		score[k]=0;
+	for(i=0;i<j;i++)
+	{
+		k=0;
+		while(nearest[i][k].content!=-1)
+		{
+				if(nearest[i][k].content!=main_user)
+					score[nearest[i][k].content]++;
+				k++;
+		}
+	}
+	for(i=0;i<j;i++)
+	{
+		if(i!=3)
+			printf("user %d , distance %d\n",i,score[i]);
+	}
+	for(i=0;i<j;i++)
+		printf("%d-----%d\n",onedistnodes[i].user,onedistnodes[i].content);
 	return 0;
 }
 int distanceLContentNodes(struct graph **content,int nocontent,struct graph **graph1,struct graph **content_user, int knn,int start, int *knu, int *knud,int totvertex)
@@ -225,7 +284,7 @@ int distanceLContentNodes(struct graph **content,int nocontent,struct graph **gr
 	}
 	for(j=0;j<k;j++)
 		printf("content %d , distance %d\n",final[j].content,final[j].distance);
-	connectedUserNodes(content, content_user, nocontent,final,knn,k,knu,knud,main_user);
+	connectedUserNodes(graph1,content, content_user, nocontent,final,knn,k,knu,knud,main_user);
 	return i;
 
 }
@@ -237,9 +296,9 @@ int main(int argc, char *argv[])
     struct graph *user_graph[100];
     struct graph *content_graph[100];
 	struct graph *content_user[100];
-    fp = fopen(argv[1],"r");
-    main_user=atoi(argv[2]);
-    knn=atoi(argv[3]);
+    fp = fopen("input2.txt","r");
+    main_user=atoi("3");
+    knn=atoi("3");
     if (fp == NULL)
     {
         printf("ERROR READING FILE\n");
